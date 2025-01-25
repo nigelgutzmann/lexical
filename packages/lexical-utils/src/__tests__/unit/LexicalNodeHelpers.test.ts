@@ -141,6 +141,14 @@ describe('LexicalNodeHelpers tests', () => {
         );
         expect($dfs()).toEqual(expectedNodes);
         expect($dfs($getRoot())).toEqual(expectedNodes);
+
+        // check the reverse
+        expect($dfs(last.node, first.node)).toEqual(
+          expectedNodes.slice().reverse(),
+        );
+        expect($dfs(secondToLast.node, second.node)).toEqual(
+          expectedNodes.slice(1, expectedNodes.length - 1).reverse(),
+        );
       });
     });
 

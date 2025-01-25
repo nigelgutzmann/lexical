@@ -211,6 +211,9 @@ export function $dfsIterator(
   const start = (startNode || $getRoot()).getLatest();
   const startDepth = $getDepth(start);
   const end = endNode;
+  const reverse =
+    !!end &&
+    ((end.isBefore(start) && !start.isParentOf(end)) || end.isParentOf(start));
   let node: null | LexicalNode = start;
   let depth = startDepth;
   let isFirstNext = true;
@@ -228,15 +231,30 @@ export function $dfsIterator(
         return iteratorDone;
       }
 
-      if ($isElementNode(node) && node.getChildrenSize() > 0) {
-        node = node.getFirstChild();
-        depth++;
+      if (reverse) {
+        if (node.getPreviousSibling()) {
+          let depthDiff;
+          [node, depthDiff] =
+            $getPreviousSiblingsLastDescendantOrPreviousSibling(node) || [
+              null,
+              0,
+            ];
+          depth += depthDiff;
+        } else {
+          node = node.getParent();
+          depth--;
+        }
       } else {
-        let depthDiff;
-        [node, depthDiff] = $getNextSiblingOrParentSibling(node) || [null, 0];
-        depth += depthDiff;
-        if (end == null && depth <= startDepth) {
-          node = null;
+        if ($isElementNode(node) && node.getChildrenSize() > 0) {
+          node = node.getFirstChild();
+          depth++;
+        } else {
+          let depthDiff;
+          [node, depthDiff] = $getNextSiblingOrParentSibling(node) || [null, 0];
+          depth += depthDiff;
+          if (end == null && depth <= startDepth) {
+            node = null;
+          }
         }
       }
 
@@ -250,6 +268,30 @@ export function $dfsIterator(
     },
   };
   return iterator;
+}
+
+/**
+ * Returns the previous sibling's last descendant (when it exists) or the previous sibling.
+ * R -> P -> T1
+ *        -> T2
+ *   -> P2
+ * returns T1 for node T2, T2 for node P2, and null for node T1 or P.
+ * @param node LexicalNode.
+ * @returns an array (tuple) coontaining the found Lexical node and the depth difference, or null, if this node doesn't exist.
+ */
+function $getPreviousSiblingsLastDescendantOrPreviousSibling(
+  node: LexicalNode,
+): null | [LexicalNode, number] {
+  let _node: LexicalNode | null = node.getPreviousSibling();
+  let depthDiff = 0;
+  while ($isElementNode(_node) && _node.getChildrenSize() > 0) {
+    _node = _node.getLastChild();
+    depthDiff++;
+  }
+  if (_node === null) {
+    return null;
+  }
+  return [_node, depthDiff];
 }
 
 /**
@@ -746,7 +788,8 @@ function $unwrapAndFilterDescendantsImpl(
  *
  * This function is read-only and performs no mutation operations, which makes
  * it suitable for import and export purposes but likely not for any in-place
- * mutation. You should use {@link $unwrapAndFilterDescendants} for in-place
+ * mutation. You shimport { $isElementNode } from 'lexical';
+ould use {@link $unwrapAndFilterDescendants} for in-place
  * mutations such as node transforms.
  *
  * @param children The children to traverse
