@@ -788,8 +788,7 @@ function $unwrapAndFilterDescendantsImpl(
  *
  * This function is read-only and performs no mutation operations, which makes
  * it suitable for import and export purposes but likely not for any in-place
- * mutation. You shimport { $isElementNode } from 'lexical';
-ould use {@link $unwrapAndFilterDescendants} for in-place
+ * mutation. You should use {@link $unwrapAndFilterDescendants} for in-place
  * mutations such as node transforms.
  *
  * @param children The children to traverse
